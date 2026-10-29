@@ -1,0 +1,489 @@
+        
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- CONFIGURATION
+local ESPEnabled = true
+local WallhackEnabled = false
+local BodyPartsEnabled = true
+local HealthBarEnabled = true
+
+local BodyColor = Color3.fromRGB(255, 60, 60)
+local OutlineColor = Color3.fromRGB(255, 255, 255)
+local MenuKey = Enum.KeyCode.RightShift
+local WaitingForKey = false
+
+local BODY_PARTS = {
+    "Head", "Torso", "UpperTorso", "LowerTorso",
+    "Left Arm", "Right Arm",
+    "LeftUpperArm", "LeftLowerArm", "LeftHand",
+    "RightUpperArm", "RightLowerArm", "RightHand",
+    "Left Leg", "Right Leg",
+    "LeftUpperLeg", "LeftLowerLeg", "LeftFoot",
+    "RightUpperLeg", "RightLowerLeg", "RightFoot",
+}
+
+-- NETTOYAGE
+local old = PlayerGui:FindFirstChild("psyHUBUI")
+if old then old:Destroy() end
+
+-- INTERFACE
+local gui = Instance.new("ScreenGui")
+gui.Name = "psyHUBUI"
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 100
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = PlayerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(360, 520)
+frame.Position = UDim2.new(0, 24, 0.2, 0)
+frame.BackgroundColor3 = Color3.fromRGB(15, 17, 27)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(130, 95, 255)
+stroke.Thickness = 1.5
+stroke.Parent = frame
+
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1, 0, 0, 70)
+topBar.BackgroundColor3 = Color3.fromRGB(24, 25, 43)
+topBar.BorderSizePixel = 0
+topBar.Active = true
+topBar.Parent = frame
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 14)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -60, 0, 30)
+title.Position = UDim2.fromOffset(16, 9)
+title.BackgroundTransparency = 1
+title.Text = "psyHUB"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextSize = 22
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = topBar
+
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1, -60, 0, 18)
+subtitle.Position = UDim2.fromOffset(17, 39)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "VISUAL CONTROL PANEL"
+subtitle.TextColor3 = Color3.fromRGB(160, 155, 195)
+subtitle.TextSize = 10
+subtitle.Font = Enum.Font.GothamMedium
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+subtitle.Parent = topBar
+
+local close = Instance.new("TextButton")
+close.Size = UDim2.fromOffset(32, 32)
+close.Position = UDim2.new(1, -44, 0, 14)
+close.BackgroundColor3 = Color3.fromRGB(65, 40, 60)
+close.Text = "×"
+close.TextColor3 = Color3.new(1, 1, 1)
+close.TextSize = 23
+close.Font = Enum.Font.GothamBold
+close.Parent = topBar
+Instance.new("UICorner", close).CornerRadius = UDim.new(0, 8)
+
+local reopen = Instance.new("TextButton")
+reopen.Size = UDim2.fromOffset(50, 50)
+reopen.Position = UDim2.new(0, 18, 0.5, 0)
+reopen.BackgroundColor3 = Color3.fromRGB(105, 75, 230)
+reopen.Text = "P"
+reopen.TextColor3 = Color3.new(1, 1, 1)
+reopen.TextSize = 22
+reopen.Font = Enum.Font.GothamBlack
+reopen.Visible = false
+reopen.Parent = gui
+Instance.new("UICorner", reopen).CornerRadius = UDim.new(0, 14)
+
+close.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    reopen.Visible = true
+end)
+
+reopen.MouseButton1Click:Connect(function()
+    frame.Visible = true
+    reopen.Visible = false
+end)
+
+-- DEPLACEMENT DU MENU
+do
+    local dragging = false
+    local startInput, startPosition
+
+    topBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            startInput = input.Position
+            startPosition = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if dragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
+            local delta = input.Position - startInput
+            frame.Position = UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+local account = Instance.new("TextLabel")
+account.Size = UDim2.new(1, -28, 0, 35)
+account.Position = UDim2.fromOffset(14, 78)
+account.BackgroundColor3 = Color3.fromRGB(25, 27, 41)
+account.Text = LocalPlayer.DisplayName .. "  @" .. LocalPlayer.Name
+account.TextColor3 = Color3.fromRGB(230, 225, 255)
+account.TextSize = 12
+account.Font = Enum.Font.GothamBold
+account.Parent = frame
+Instance.new("UICorner", account).CornerRadius = UDim.new(0, 8)
+
+local options = Instance.new("Frame")
+options.Size = UDim2.new(1, -28, 0, 190)
+options.Position = UDim2.fromOffset(14, 124)
+options.BackgroundTransparency = 1
+options.Parent = frame
+
+-- EFFETS VISUELS
+local function removeNamed(character, name)
+    local object = character:FindFirstChild(name)
+    if object then object:Destroy() end
+end
+
+local function updateCharacter(character)
+    if not character or not character.Parent then return end
+
+    -- ESP GENERAL
+    local highlight = character:FindFirstChild("psyHUBHighlight")
+
+    if ESPEnabled then
+        if not highlight then
+            highlight = Instance.new("Highlight")
+            highlight.Name = "psyHUBHighlight"
+            highlight.Adornee = character
+            highlight.Parent = character
+        end
+
+        highlight.Enabled = true
+        highlight.FillColor = BodyColor
+        highlight.OutlineColor = OutlineColor
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0
+        highlight.DepthMode = WallhackEnabled
+            and Enum.HighlightDepthMode.AlwaysOnTop
+            or Enum.HighlightDepthMode.Occluded
+    else
+        removeNamed(character, "psyHUBHighlight")
+    end
+
+    -- CONTOURS DES PARTIES DU CORPS
+    for _, partName in ipairs(BODY_PARTS) do
+        local part = character:FindFirstChild(partName)
+        local highlightName = "BodyESP_" .. partName:gsub("%s", "")
+
+        if BodyPartsEnabled and part and part:IsA("BasePart") then
+            local partHighlight = part:FindFirstChild(highlightName)
+
+            if not partHighlight then
+                partHighlight = Instance.new("Highlight")
+                partHighlight.Name = highlightName
+                partHighlight.Adornee = part
+                partHighlight.Parent = part
+            end
+
+            partHighlight.Enabled = true
+            partHighlight.FillColor = BodyColor
+            partHighlight.OutlineColor = OutlineColor
+            partHighlight.FillTransparency = 0.55
+            partHighlight.OutlineTransparency = 0
+            partHighlight.DepthMode = WallhackEnabled
+                and Enum.HighlightDepthMode.AlwaysOnTop
+                or Enum.HighlightDepthMode.Occluded
+        elseif part then
+            removeNamed(part, highlightName)
+        end
+    end
+
+    -- BARRE DE VIE
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local head = character:FindFirstChild("Head")
+    local health = character:FindFirstChild("psyHUBHealth")
+
+    if not HealthBarEnabled then
+        if health then health:Destroy() end
+    elseif humanoid and head then
+        if not health then
+            health = Instance.new("BillboardGui")
+            health.Name = "psyHUBHealth"
+            health.Adornee = head
+            health.Size = UDim2.fromOffset(100, 10)
+            health.StudsOffset = Vector3.new(0, 3, 0)
+            health.AlwaysOnTop = true
+            health.Parent = character
+
+            local background = Instance.new("Frame")
+            background.Name = "Background"
+            background.Size = UDim2.fromScale(1, 1)
+            background.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            background.BorderSizePixel = 0
+            background.ClipsDescendants = true
+            background.Parent = health
+            Instance.new("UICorner", background).CornerRadius =
+                UDim.new(0, 4)
+
+            local bar = Instance.new("Frame")
+            bar.Name = "Bar"
+            bar.Size = UDim2.fromScale(1, 1)
+            bar.BackgroundColor3 = Color3.fromRGB(40, 220, 70)
+            bar.BorderSizePixel = 0
+            bar.Parent = background
+            Instance.new("UICorner", bar).CornerRadius =
+                UDim.new(0, 4)
+        end
+
+        local bar = health.Background.Bar
+        local ratio = math.clamp(
+            humanoid.Health / math.max(humanoid.MaxHealth, 1),
+            0, 1
+        )
+        bar.Size = UDim2.fromScale(ratio, 1)
+        bar.BackgroundColor3 = ratio > 0.5
+            and Color3.fromRGB(40, 220, 70)
+            or (ratio > 0.25
+                and Color3.fromRGB(255, 190, 30)
+                or Color3.fromRGB(255, 45, 45))
+    end
+end
+
+local function refreshAllVisuals()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            updateCharacter(player.Character)
+        end
+    end
+end
+
+-- CHOIX ENABLE / DISABLE
+local function createChoice(labelText, y, getter, setter)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 40)
+    row.Position = UDim2.fromOffset(0, y)
+    row.BackgroundColor3 = Color3.fromRGB(25, 27, 41)
+    row.BorderSizePixel = 0
+    row.Parent = options
+    Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -132, 1, 0)
+    label.Position = UDim2.fromOffset(10, 0)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.TextColor3 = Color3.fromRGB(235, 236, 248)
+    label.TextSize = 11
+    label.Font = Enum.Font.GothamBold
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local buttons = {}
+
+    local function refresh()
+        local enabled = getter()
+
+        buttons[1].BackgroundColor3 = enabled
+            and Color3.fromRGB(50, 175, 110)
+            or Color3.fromRGB(48, 50, 70)
+
+        buttons[2].BackgroundColor3 = not enabled
+            and Color3.fromRGB(190, 60, 80)
+            or Color3.fromRGB(48, 50, 70)
+    end
+
+    for i, state in ipairs({true, false}) do
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.fromOffset(55, 26)
+        button.Position = UDim2.new(
+            1, -120 + (i - 1) * 60, 0.5, -13
+        )
+        button.BackgroundColor3 = Color3.fromRGB(48, 50, 70)
+        button.Text = state and "ENABLE" or "DISABLE"
+        button.TextColor3 = Color3.new(1, 1, 1)
+        button.TextSize = 9
+        button.Font = Enum.Font.GothamBold
+        button.Parent = row
+        Instance.new("UICorner", button).CornerRadius =
+            UDim.new(0, 6)
+
+        buttons[i] = button
+
+        button.MouseButton1Click:Connect(function()
+            setter(state)
+            refreshAllVisuals()
+            refresh()
+        end)
+    end
+
+    refresh()
+end
+
+createChoice("Player ESP", 0,
+    function() return ESPEnabled end,
+    function(v) ESPEnabled = v end)
+
+-- BOUTON WALLHACK ENABLE / DISABLE
+createChoice("Wallhack", 46,
+    function() return WallhackEnabled end,
+    function(v)
+        WallhackEnabled = v
+    end)
+
+createChoice("Body Parts", 92,
+    function() return BodyPartsEnabled end,
+    function(v) BodyPartsEnabled = v end)
+
+createChoice("Health Bar", 138,
+    function() return HealthBarEnabled end,
+    function(v) HealthBarEnabled = v end)
+
+-- COULEURS
+local colorLabel = Instance.new("TextLabel")
+colorLabel.Size = UDim2.new(1, -28, 0, 22)
+colorLabel.Position = UDim2.fromOffset(14, 320)
+colorLabel.BackgroundTransparency = 1
+colorLabel.Text = "BODY COLOR"
+colorLabel.TextColor3 = Color3.fromRGB(220, 220, 245)
+colorLabel.TextSize = 11
+colorLabel.Font = Enum.Font.GothamBold
+colorLabel.TextXAlignment = Enum.TextXAlignment.Left
+colorLabel.Parent = frame
+
+local colors = {
+    {"RED", Color3.fromRGB(255, 45, 45)},
+    {"BLUE", Color3.fromRGB(50, 130, 255)},
+    {"GREEN", Color3.fromRGB(40, 230, 100)},
+    {"PURPLE", Color3.fromRGB(165, 80, 255)},
+    {"WHITE", Color3.fromRGB(255, 255, 255)},
+}
+
+for i, entry in ipairs(colors) do
+    local name, color = entry[1], entry[2]
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.fromOffset(56, 34)
+    button.Position = UDim2.fromOffset(14 + (i - 1) * 66, 345)
+    button.BackgroundColor3 = color
+    button.Text = name
+    button.TextColor3 = name == "WHITE"
+        and Color3.fromRGB(20, 20, 30)
+        or Color3.new(1, 1, 1)
+    button.TextSize = 9
+    button.Font = Enum.Font.GothamBold
+    button.Parent = frame
+    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 8)
+
+    button.MouseButton1Click:Connect(function()
+        BodyColor = color
+        refreshAllVisuals()
+    end)
+end
+
+-- RACCOURCI CLAVIER
+local keybind = Instance.new("TextButton")
+keybind.Size = UDim2.new(1, -28, 0, 32)
+keybind.Position = UDim2.fromOffset(14, 398)
+keybind.BackgroundColor3 = Color3.fromRGB(34, 31, 56)
+keybind.TextColor3 = Color3.fromRGB(220, 214, 255)
+keybind.TextSize = 11
+keybind.Font = Enum.Font.GothamBold
+keybind.Parent = frame
+Instance.new("UICorner", keybind).CornerRadius = UDim.new(0, 8)
+
+local function refreshKeybind()
+    keybind.Text = WaitingForKey
+        and "PRESS A KEY..."
+        or ("MENU KEY: " .. MenuKey.Name:upper())
+end
+
+keybind.MouseButton1Click:Connect(function()
+    WaitingForKey = true
+    refreshKeybind()
+end)
+
+UIS.InputBegan:Connect(function(input, processed)
+    if WaitingForKey
+        and input.UserInputType == Enum.UserInputType.Keyboard then
+        MenuKey = input.KeyCode
+        WaitingForKey = false
+        refreshKeybind()
+        return
+    end
+
+    if not processed
+        and input.UserInputType == Enum.UserInputType.Keyboard
+        and input.KeyCode == MenuKey then
+        frame.Visible = not frame.Visible
+        reopen.Visible = not frame.Visible
+    end
+end)
+
+refreshKeybind()
+
+-- JOUEURS ET REAPPARITIONS
+local function setupPlayer(player)
+    if player == LocalPlayer then return end
+
+    local function onCharacter(character)
+        character:WaitForChild("Humanoid", 10)
+        character:WaitForChild("Head", 10)
+        task.wait(0.2)
+        updateCharacter(character)
+
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.HealthChanged:Connect(function()
+                if HealthBarEnabled then
+                    updateCharacter(character)
+                end
+            end)
+
+            humanoid:GetPropertyChangedSignal("MaxHealth"):Connect(function()
+                updateCharacter(character)
+            end)
+        end
+    end
+
+    player.CharacterAdded:Connect(onCharacter)
+
+    if player.Character then
+        task.spawn(onCharacter, player.Character)
+    end
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+    setupPlayer(player)
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
+
+print("psyHUB initialized")
